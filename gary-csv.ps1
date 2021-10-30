@@ -1,9 +1,16 @@
 # GARY GITTER
 # v3
 
+#region VARIABLES
+
 $currentDirectory = Get-Location
 $csvFile = Join-Path $currentDirectory "gitlist.csv"
 
+#TODO: Allow user to specify csv file as commandline argument
+
+#endregion
+
+#region FUNCTIONS
 function CustomWrite {
   param ([string]$text)
   Write-Host $text -ForegroundColor Yellow
@@ -80,6 +87,8 @@ function ParseFile {
       if ($gitlink2.StartsWith("http")) {
         HandleGit $name "git2" $gitlink2
       }
+
+      # TODO: Make more general, allow arbitrary number of git repos per user
       
     }
     else {
@@ -88,12 +97,15 @@ function ParseFile {
   }
 }
 
+#endregion
+
 if (!(Test-Path($csvFile))) {
   Write-Output "Can't find gitlist.csv, exiting"
   $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
   Exit
 }
 
+# -- MAIN PROGRAM
 ParseFile $csvFile
 
 read-host "`nPress ENTER to continue..."

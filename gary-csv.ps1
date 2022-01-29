@@ -3,6 +3,8 @@
 
 #region VARIABLES
 
+Write-Host $args
+
 $currentDirectory = Get-Location
 $csvFile = Join-Path $currentDirectory "gitlist.csv"
 
@@ -85,14 +87,14 @@ function ParseFile {
       }
   
       if ($gitlink2.StartsWith("http")) {
-        HandleGit $name "git2" $gitlink2
+        HandleGit $studentName "git2" $gitlink2
       }
 
       # TODO: Make more general, allow arbitrary number of git repos per user
       
     }
     else {
-      CustomWrite "  Skipping $name, has no git link"
+      CustomWrite "  Skipping $studentName, has no git link"
     }
   }
 }

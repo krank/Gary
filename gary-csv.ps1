@@ -39,7 +39,7 @@ function HandleGit {
     }
   }
   else {
-    Write-Output "  $studentName no Git directory found in subdirectory $subdir, cloning..."
+    Write-Output "  $studentName : no Git directory found in subdirectory $subdir, cloning..."
 
     if (!(Test-path "$studentName/$subdir/")) {
       [void](New-Item -Name "$studentName/$subdir" -ItemType "directory")
@@ -53,7 +53,7 @@ function CheckAndCreateFolder {
   param ([string]$folderName)
 
   if (-not (Test-path $folderName -PathType Container)) {
-    CustomWrite "  $folderName folder does not exist"
+    CustomWrite "  $folderName folder does not exist. Creating it now."
     [void](New-Item -Name "$folderName" -ItemType "directory")
   }
   else {
@@ -66,35 +66,52 @@ function ParseFile {
 
   foreach ($line in [System.IO.File]::ReadLines($csvFile)) {
 
-    [string]$studentName, [string]$gitlink1, [string]$gitlink2 = $line.split(",")
+    [string]$studentName, [string]$gitlinksString = $line.split(",", 2)
+
+    $gitlinks = $gitlinksString.split(",")
   
     CustomWrite ("=" * 80)
     CustomWrite "  $studentName"
     CustomWrite ("-" * 80)
-  
-  
-    if ($gitlink1.StartsWith("http") -or $gitlink2.StartsWith("http")) {
-  
-      # Check if student's folder exists
+
+    if (($gitlinks.Count -gt 0) -and ($gitlinks[0].Length -gt 0))
+    {
       CheckAndCreateFolder $studentName
-
-      # Check whether to use git1 & git2 subfolders
-      if ($gitlink1.StartsWith("http") -and -not $gitlink2.StartsWith("http")) {
-        HandleGit $studentName "." $gitlink1
-      }
-      elseif ($gitlink1.StartsWith("http")) {
-        HandleGit $studentName "git1" $gitlink1
-      }
-  
-      if ($gitlink2.StartsWith("http")) {
-        HandleGit $studentName "git2" $gitlink2
-      }
-
-      # TODO: Make more general, allow arbitrary number of git repos per user
       
+      [int32]$linkNum = 1
+      
+      if ($gitlinks.Count -eq 1) {
+        CustomWrite "  Single git link candidate found."
+        
+        # Check if gitlink 0 seems to be valid URL
+        if ($gitlinks[0].StartsWith("http")) {
+          HandleGit $studentName "." $gitlinks[0]
+        }
+      }
+      elseif ($gitlinks.Count -gt 1) {
+        CustomWrite "  Multiple git link candidates found."
+        
+        foreach ($gitlink in $gitlinks) {
+          # Check for quotation marks. They fuck everything up.
+          if ($gitlink.StartsWith('"')) {
+            $gitlink = $gitlink.Substring(1)
+          }
+          if ($gitlink.EndsWith('"')) {
+            $gitlink = $gitlink.Substring(0, $gitlink.Length - 1)
+          }
+          
+          # Check if seems to be valid URL
+          if ($gitlink.StartsWith("http")) {
+            HandleGit $studentName "git$linkNum" $gitlink
+          }
+          
+          ++$linkNum
+        }
+      }
     }
-    else {
-      CustomWrite "  Skipping $studentName, has no git link"
+    else
+    {
+      CustomWrite "  No git link candidates found for $studentName, skipping."
     }
   }
 }

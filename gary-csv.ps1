@@ -66,6 +66,13 @@ function ParseFile {
 
   foreach ($line in [System.IO.File]::ReadLines($csvFile)) {
 
+    # Skipping header line & others without http's
+    if (-not($line.Contains("http")))
+    {
+      CustomWrite "--- No https found, skipping line"
+      continue
+    }
+
     [string]$studentName, [string]$gitlinksString = $line.split(",", 2)
 
     $gitlinks = $gitlinksString.split(",")
@@ -74,11 +81,10 @@ function ParseFile {
     CustomWrite "  $studentName"
     CustomWrite ("-" * 80)
 
-    if (($gitlinks.Count -gt 0) -and ($gitlinks[0].Length -gt 0))
+    if (($gitlinks.Count -gt 0))
     {
       CheckAndCreateFolder $studentName
       
-      [int32]$linkNum = 1
       
       if ($gitlinks.Count -eq 1) {
         CustomWrite "  Single git link candidate found."
@@ -91,6 +97,8 @@ function ParseFile {
       elseif ($gitlinks.Count -gt 1) {
         CustomWrite "  Multiple git link candidates found."
         
+        [int32]$linkNum = 1
+
         foreach ($gitlink in $gitlinks) {
           # Check for quotation marks. They fuck everything up.
           if ($gitlink.StartsWith('"')) {
